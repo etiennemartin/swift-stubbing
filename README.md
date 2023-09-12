@@ -15,24 +15,24 @@ In its simplest form, the following is the template used to generate a stubbable
 
 ```swift
 // Protocol to stub
-protocol MyProcotol {}
+protocol MyProtocol {}
 
 // Stubbable implementation of the Protocol
 class StubbableMyProtocol: MyProtocol {
-  typealias SetupFunc = (inout Stubs) -> ()
+    typealias SetupFunc = (inout Stubs) -> ()
 
-  // storage for stubs
-  var stubs: Stubs
+    // storage for stubs
+    var stubs: Stubs
 
-  init(setup: SetupFunc? = nil) {
-      var stubs = Stubs()
-      setup?(&stubs)
-      self.stubs = stubs
-  }
+    init(setup: SetupFunc? = nil) {
+        var stubs = Stubs()
+        setup?(&stubs)
+        self.stubs = stubs
+    }
 
-  // Default implementation of the stubs.
-  struct Stubs {
-  }
+    // Default implementation of the stubs.
+    struct Stubs {
+    }
 }
 ```
 
@@ -44,51 +44,51 @@ Now seeing the template might not have any value at the moment, lets dive into a
 
 ```swift
 protocol HttpClientConnecting {
-  var maxConnections: Int { get set }
-  func connect(url: URL) -> Bool
+    var maxConnections: Int { get set }
+    func connect(url: URL) -> Bool
 }
 
 class StubbableHttpClient: HttpClientConnecting {
-  typealias SetupFunc = (inout Stubs) -> ()
+    typealias SetupFunc = (inout Stubs) -> ()
 
-  // storage for stubs
-  var stubs: Stubs
+    // storage for stubs
+    var stubs: Stubs
 
-  init(setup: SetupFunc? = nil) {
-      var stubs = Stubs()
-      setup?(&stubs)
-      self.stubs = stubs
-  }
-
-  // Default implementation of the stubs.
-  struct Stubs {
-    // The default implementation here should make the application crash or behave poorly.
-    // The idea here is to point out the developer error in setting up the stubbable class.
-    var maxConnections: Int = -1
-    var connect: (URL) -> Bool = { fatalError("connect function is not stubbed!") }
-
-    // Wholistic default implementation no-op functions
-    mutating func noop() {
-      maxConection = 0
-      connect = { _ in return true }
+    init(setup: SetupFunc? = nil) {
+        var stubs = Stubs()
+        setup?(&stubs)
+        self.stubs = stubs
     }
 
-    // Default implementation that guaranties connection failures
-    mutating func failedConnection() {
-      maxConnectiong = 1
-      connect = { _ in return false }
+    // Default implementation of the stubs.
+    struct Stubs {
+        // The default implementation here should make the application crash or behave poorly.
+        // The idea here is to point out the developer error in setting up the stubbable class.
+        var maxConnections: Int = -1
+        var connect: (URL) -> Bool = { _ in fatalError("connect function is not stubbed!") }
+
+        // Wholistic default implementation no-op functions
+        mutating func noop() {
+            maxConnections = 0
+            connect = { _ in return true }
+        }
+
+        // Default implementation that guaranties connection failures
+        mutating func failedConnection() {
+            maxConnections = 1
+            connect = { _ in return false }
+        }
     }
-  }
 
-  // Relay to the stubs implementations
-  var maxConnection: Int {
-    get { return stubs.maxConnections }
-    set { stubs.maxConnections = newValue }
-  }
+    // Relay to the stubs implementations
+    var maxConnections: Int {
+        get { return stubs.maxConnections }
+        set { stubs.maxConnections = newValue }
+    }
 
-  func connect(url: URL) -> Bool {
-    return stubs.connect(url)
-  }
+    func connect(url: URL) -> Bool {
+        return stubs.connect(url)
+    }
 }
 ```
 
@@ -97,31 +97,32 @@ Alright that was a bunch of code to read through. The following examples shows y
 ```swift
 // noop instance
 var noop = StubbableHttpClient {
-  // Calls the Stubs struct's method noop() and sets up all the internals to be no-op.
-  $0.noop()
+    // Calls the Stubs struct's method noop() and sets up all the internals to be no-op.
+    $0.noop()
 }
-print(noop.connect(URL(""))
+print(noop.connect(url: URL(string: "")!))
 // Output: true
 
 // implementation that will always fails connect()
 var alwaysFail = StubbableHttpClient {
-  $0.failedConnection()
+    $0.failedConnection()
 }
-print(noop.connect(URL(""))
+print(noop.connect(url: URL(string: "")!))
 // Output: false
 
 // FatalError case where a stub wasn't defined
 var crashyCrash = StubbableHttpClient()
-crashyCrash.connect(URL(""))
+_ = crashyCrash.connect(url: URL(string: "")!)
 // Output: fatalError
 
 // Custom implementation of a stub
 var custom = StubbableHttpClient {
-  $0.connect = { url in
-    print(url)
-  }
+    $0.connect = { url in
+        print(url)
+        return true
+    }
 }
-print(custom.connect(URL("http://www.my-domain.com")))
+print(custom.connect(url: URL(string: "http://www.my-domain.com")!))
 // Output: http://www.my-domain.com
 ```
 
