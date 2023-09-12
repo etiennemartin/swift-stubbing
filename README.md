@@ -113,7 +113,7 @@ print(noop.connect(url: URL(string: "")!))
 // FatalError case where a stub wasn't defined
 var crashyCrash = StubbableHttpClient()
 _ = crashyCrash.connect(url: URL(string: "")!)
-// Output: fatalError
+// Output: fatalError! - connect function is not stubbed!
 
 // Custom implementation of a stub
 var custom = StubbableHttpClient {
@@ -124,6 +124,7 @@ var custom = StubbableHttpClient {
 }
 print(custom.connect(url: URL(string: "http://www.my-domain.com")!))
 // Output: http://www.my-domain.com
+//         true
 ```
 
 As you can see this stubbable implemenation can be used in serveral different ways. Gone are the days of having mutiple "mock" implementations of the same protocol. With this approach one implementation can rule them all!
